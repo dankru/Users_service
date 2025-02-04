@@ -36,7 +36,6 @@ func main() {
 	userService := service.NewService(userRepo, hasher)
 	handler := rest.NewHandler(userService)
 	handler.InitRouter()
-
 	if err := http.ListenAndServe(":8080", handler.InitRouter()); err != nil {
 		log.Fatal("Failed to run server", err.Error())
 	}

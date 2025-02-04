@@ -3,7 +3,6 @@ module github.com/dankru/Commissions_simple
 go 1.23.4
 
 require (
-	github.com/dankru/practice-task1 v0.0.0-20250119151332-1dc50c950653
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/gorilla/mux v1.8.1
 	github.com/lib/pq v1.10.9

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/dankru/Commissions_simple/internal/domain"
 )
 
@@ -49,7 +50,7 @@ func (s *Service) SignUp(input domain.UserInput) error {
 		Email:    *input.Email,
 		Password: password,
 	}
-
+	fmt.Println("inside sign up")
 	err = s.repository.SignUp(user)
 	return err
 }

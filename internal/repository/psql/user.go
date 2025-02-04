@@ -3,6 +3,7 @@ package psql
 import (
 	"database/sql"
 	"fmt"
+	"github.com/dankru/Commissions_simple/internal/domain"
 	"strings"
 	"time"
 )
@@ -46,7 +47,7 @@ func (repo *Repository) GetById(id int64) (domain.User, error) {
 	return u, err
 }
 
-func (repo *Repository) SignUp(user domain.UserInput) error {
+func (repo *Repository) SignUp(user domain.User) error {
 	_, err := repo.db.Exec("insert into users (name, email, password, registered_at) values ($1, $2, $3, $4)", user.Name, user.Email, user.Password, time.Now())
 	return err
 }
@@ -63,19 +64,19 @@ func (repo *Repository) Update(id int64, userInp domain.UserInput) error {
 
 	if userInp.Name != nil {
 		setValues = append(setValues, fmt.Sprintf("name = $%d", argId))
-		args = append(args, *userInp.Name)
+		args = append(args, userInp.Name)
 		argId++
 	}
 
 	if userInp.Email != nil {
 		setValues = append(setValues, fmt.Sprintf("email = $%d", argId))
-		args = append(args, *userInp.Email)
+		args = append(args, userInp.Email)
 		argId++
 	}
 
 	if userInp.Password != nil {
 		setValues = append(setValues, fmt.Sprintf("password = $%d", argId))
-		args = append(args, *userInp.Password)
+		args = append(args, userInp.Password)
 		argId++
 	}
 

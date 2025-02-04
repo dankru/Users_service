@@ -20,9 +20,9 @@ type User struct {
 }
 
 type UserInput struct {
-	Name     string `json:"name" validate:"required,gte=2"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,gte=6"`
+	Name     *string `json:"name" validate:"required,gte=2"`
+	Email    *string `json:"email" validate:"required,email"`
+	Password *string `json:"password" validate:"required,gte=6"`
 }
 
 func (i UserInput) Validate() error {

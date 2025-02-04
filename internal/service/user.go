@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/dankru/Commissions_simple/internal/domain"
-	"time"
 )
 
 type UserRepository interface {
@@ -41,15 +40,14 @@ func (s *Service) GetById(id int64) (domain.User, error) {
 }
 
 func (s *Service) SignUp(input domain.UserInput) error {
-	password, err := s.hasher.Hash(input.Password)
+	password, err := s.hasher.Hash(*input.Password)
 	if err != nil {
 		return err
 	}
 	user := domain.User{
-		Name:         input.Name,
-		Email:        input.Email,
-		Password:     password,
-		RegisteredAt: time.Now(),
+		Name:     *input.Name,
+		Email:    *input.Email,
+		Password: password,
 	}
 
 	err = s.repository.SignUp(user)

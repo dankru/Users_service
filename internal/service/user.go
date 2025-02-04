@@ -1,24 +1,33 @@
 package service
 
 import (
-	"github.com/dankru/practice-task1/internal/domain"
+	"github.com/dankru/Commissions_simple/internal/domain"
+	"time"
 )
 
 type UserRepository interface {
 	GetAll() ([]domain.User, error)
 	GetById(id int64) (domain.User, error)
-	SignUp(user domain.UserInput) error
+	SignUp(user domain.User) error
 	Replace(id int64, user domain.User) error
 	Update(id int64, userInp domain.UserInput) error
 	Delete(id int64) error
 }
 
-type Service struct {
-	repository UserRepository
+type PasswordHasher interface {
+	Hash(password string) (string, error)
 }
 
-func NewService(repository UserRepository) *Service {
-	return &Service{repository: repository}
+type Service struct {
+	repository UserRepository
+	hasher     PasswordHasher
+}
+
+func NewService(repository UserRepository, hasher PasswordHasher) *Service {
+	return &Service{
+		repository: repository,
+		hasher:     hasher,
+	}
 }
 
 func (s *Service) GetAll() ([]domain.User, error) {
@@ -31,8 +40,19 @@ func (s *Service) GetById(id int64) (domain.User, error) {
 	return user, err
 }
 
-func (s *Service) SignUp(user domain.UserInput) error {
-	err := s.repository.SignUp(user)
+func (s *Service) SignUp(input domain.UserInput) error {
+	password, err := s.hasher.Hash(input.Password)
+	if err != nil {
+		return err
+	}
+	user := domain.User{
+		Name:         input.Name,
+		Email:        input.Email,
+		Password:     password,
+		RegisteredAt: time.Now(),
+	}
+
+	err = s.repository.SignUp(user)
 	return err
 }
 

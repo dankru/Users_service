@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dankru/practice-task1/internal/domain"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"

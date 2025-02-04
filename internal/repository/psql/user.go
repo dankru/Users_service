@@ -3,7 +3,6 @@ package psql
 import (
 	"database/sql"
 	"fmt"
-	"github.com/dankru/practice-task1/internal/domain"
 	"strings"
 	"time"
 )

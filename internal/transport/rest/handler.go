@@ -15,6 +15,7 @@ type UserService interface {
 	GetAll() ([]domain.User, error)
 	GetById(id int64) (domain.User, error)
 	SignUp(user domain.UserInput) error
+	SignIn(signInInput domain.SignInInput) (string, error)
 	Replace(id int64, user domain.User) error
 	Update(id int64, userInp domain.UserInput) error
 	Delete(id int64) error
@@ -39,6 +40,7 @@ func (h *Handler) initAuthRoutes(router *mux.Router) {
 	users := router.PathPrefix("/auth").Subrouter()
 	{
 		users.HandleFunc("/sign-up", h.signUp).Methods(http.MethodPost)
+		users.HandleFunc("/sign-in", h.signIn).Methods(http.MethodGet)
 	}
 }
 
@@ -114,6 +116,46 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
+	reqBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	var signInInput domain.SignInInput
+	if err = json.Unmarshal(reqBytes, &signInInput); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err = signInInput.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := h.service.SignIn(signInInput)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response, err := json.Marshal(map[string]string{
+		"token": token,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(response)
 }
 
 func (h *Handler) replaceUser(w http.ResponseWriter, r *http.Request) {

@@ -1,14 +1,20 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/dankru/Commissions_simple/internal/domain"
+	"github.com/golang-jwt/jwt"
+	"strconv"
+	"time"
 )
 
 type UserRepository interface {
 	GetAll() ([]domain.User, error)
 	GetById(id int64) (domain.User, error)
-	SignUp(user domain.User) error
+	CreateUser(user domain.User) error
+	GetByCredentials(email string, hashedPassword string) (domain.User, error)
 	Replace(id int64, user domain.User) error
 	Update(id int64, userInp domain.UserInput) error
 	Delete(id int64) error
@@ -21,12 +27,14 @@ type PasswordHasher interface {
 type Service struct {
 	repository UserRepository
 	hasher     PasswordHasher
+	hmacSecret []byte
 }
 
-func NewService(repository UserRepository, hasher PasswordHasher) *Service {
+func NewService(repository UserRepository, hasher PasswordHasher, secret []byte) *Service {
 	return &Service{
 		repository: repository,
 		hasher:     hasher,
+		hmacSecret: secret,
 	}
 }
 
@@ -51,8 +59,28 @@ func (s *Service) SignUp(input domain.UserInput) error {
 		Password: password,
 	}
 	fmt.Println("inside sign up")
-	err = s.repository.SignUp(user)
+	err = s.repository.CreateUser(user)
 	return err
+}
+
+func (s *Service) SignIn(signInInput domain.SignInInput) (string, error) {
+	password, err := s.hasher.Hash(signInInput.Password)
+	if err != nil {
+		return "", err
+	}
+	user, err := s.repository.GetByCredentials(signInInput.Email, password)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", domain.ErrUserNotFound
+		}
+		return "", err
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		Subject:   strconv.Itoa(int(user.ID)),
+		IssuedAt:  time.Now().Unix(),
+		ExpiresAt: time.Now().Add(time.Hour * 15).Unix(),
+	})
+	return token.SignedString(s.hmacSecret)
 }
 
 func (s *Service) Replace(id int64, user domain.User) error {

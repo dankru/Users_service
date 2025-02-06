@@ -1,9 +1,12 @@
 package domain
 
 import (
+	"errors"
 	"github.com/go-playground/validator/v10"
 	"time"
 )
+
+var ErrUserNotFound = errors.New("User not found")
 
 var validate *validator.Validate
 
@@ -25,6 +28,15 @@ type UserInput struct {
 	Password *string `json:"password" validate:"required,gte=6"`
 }
 
+type SignInInput struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,gte=6"`
+}
+
 func (i UserInput) Validate() error {
+	return validate.Struct(i)
+}
+
+func (i *SignInInput) Validate() error {
 	return validate.Struct(i)
 }

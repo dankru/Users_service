@@ -33,7 +33,7 @@ func main() {
 	hasher := hash.NewSHA1Hasher("RqijtrEJTQ0wtqTEsGNHrownSaltIGj")
 
 	userRepo := psql.NewRepository(db)
-	userService := service.NewService(userRepo, hasher)
+	userService := service.NewService(userRepo, hasher, []byte("Secret here"))
 	handler := rest.NewHandler(userService)
 	handler.InitRouter()
 	if err := http.ListenAndServe(":8080", handler.InitRouter()); err != nil {

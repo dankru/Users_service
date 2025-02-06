@@ -47,9 +47,17 @@ func (repo *Repository) GetById(id int64) (domain.User, error) {
 	return u, err
 }
 
-func (repo *Repository) SignUp(user domain.User) error {
+func (repo *Repository) CreateUser(user domain.User) error {
 	_, err := repo.db.Exec("insert into users (name, email, password, registered_at) values ($1, $2, $3, $4)", user.Name, user.Email, user.Password, time.Now())
 	return err
+}
+
+func (repo *Repository) GetByCredentials(email string, hashedPassword string) (domain.User, error) {
+	var user domain.User
+	err := repo.db.QueryRow("SELECT id, name, email, password, registered_at FROM users WHERE email=$1 AND password=$2", email, hashedPassword).
+		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.RegisteredAt)
+
+	return user, err
 }
 
 func (repo *Repository) Replace(id int64, user domain.User) error {

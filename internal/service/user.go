@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -81,6 +82,40 @@ func (s *Service) SignIn(signInInput domain.SignInInput) (string, error) {
 		ExpiresAt: time.Now().Add(time.Hour * 15).Unix(),
 	})
 	return token.SignedString(s.hmacSecret)
+}
+
+func (s *Service) ParseToken(ctx context.Context, token string) (int64, error) {
+	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.hmacSecret, nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	if !t.Valid {
+		return 0, errors.New("invalid token")
+	}
+
+	claims, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, errors.New("invalid claims")
+	}
+
+	subject, ok := claims["sub"].(string)
+	if !ok {
+		return 0, errors.New("Invalid subject")
+	}
+
+	id, err := strconv.Atoi(subject)
+	if err != nil {
+		return 0, errors.New("invalid subject")
+	}
+
+	return int64(id), nil
 }
 
 func (s *Service) Replace(id int64, user domain.User) error {

@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,13 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
+)
+
+type CtxValue int
+
+const (
+	ctxUserId CtxValue = iota
 )
 
 type UserService interface {
@@ -16,6 +24,7 @@ type UserService interface {
 	GetById(id int64) (domain.User, error)
 	SignUp(user domain.UserInput) error
 	SignIn(signInInput domain.SignInInput) (string, error)
+	ParseToken(ctx context.Context, token string) (int64, error)
 	Replace(id int64, user domain.User) error
 	Update(id int64, userInp domain.UserInput) error
 	Delete(id int64) error
@@ -37,16 +46,17 @@ func (h *Handler) InitRouter() *mux.Router {
 }
 
 func (h *Handler) initAuthRoutes(router *mux.Router) {
-	users := router.PathPrefix("/auth").Subrouter()
+	auth := router.PathPrefix("/auth").Subrouter()
 	{
-		users.HandleFunc("/sign-up", h.signUp).Methods(http.MethodPost)
-		users.HandleFunc("/sign-in", h.signIn).Methods(http.MethodGet)
+		auth.HandleFunc("/sign-up", h.signUp).Methods(http.MethodPost)
+		auth.HandleFunc("/sign-in", h.signIn).Methods(http.MethodGet)
 	}
 }
 
 func (h *Handler) initUserRoutes(router *mux.Router) {
 	users := router.PathPrefix("/users").Subrouter()
 	{
+		users.Use(h.authMiddleware)
 		users.HandleFunc("", h.getUsers).Methods(http.MethodGet)
 		users.HandleFunc("/{id:[0-9]+}", h.getUserById).Methods(http.MethodGet)
 		users.HandleFunc("/{id:[0-9]+}", h.replaceUser).Methods(http.MethodPut)
@@ -221,6 +231,45 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token, err := getTokenFromRequest(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		userId, err := h.service.ParseToken(r.Context(), token)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), ctxUserId, userId)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getTokenFromRequest(r *http.Request) (string, error) {
+	header := r.Header.Get("Authorization")
+	if header == "" {
+		return "", errors.New("Empty auth header")
+	}
+
+	headerParts := strings.Split(header, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return "", errors.New("Invalid auth header")
+	}
+
+	if len(headerParts[1]) == 0 {
+		return "", errors.New("token is empty")
+	}
+
+	return headerParts[1], nil
 }
 
 func getIdFromRequest(r *http.Request) (int64, error) {

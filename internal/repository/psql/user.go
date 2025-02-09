@@ -43,25 +43,29 @@ func (repo *Repository) GetAll() ([]domain.User, error) {
 
 func (repo *Repository) GetById(id int64) (domain.User, error) {
 	var u domain.User
-	err := repo.db.QueryRow("select * from users WHERE id = $1", id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.RegisteredAt)
+	err := repo.db.QueryRow("select * from users WHERE id = $1", id).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.RegisteredAt)
 	return u, err
 }
 
 func (repo *Repository) CreateUser(user domain.User) error {
-	_, err := repo.db.Exec("insert into users (name, email, password, registered_at) values ($1, $2, $3, $4)", user.Name, user.Email, user.Password, time.Now())
+	_, err := repo.db.Exec("insert into users (name, email, password, registered_at) values ($1, $2, $3, $4)",
+		user.Name, user.Email, user.Password, time.Now())
 	return err
 }
 
 func (repo *Repository) GetByCredentials(email string, hashedPassword string) (domain.User, error) {
 	var user domain.User
-	err := repo.db.QueryRow("SELECT id, name, email, password, registered_at FROM users WHERE email=$1 AND password=$2", email, hashedPassword).
+	err := repo.db.QueryRow("SELECT id, name, email, password, registered_at FROM users WHERE email=$1 AND password=$2",
+		email, hashedPassword).
 		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.RegisteredAt)
 
 	return user, err
 }
 
 func (repo *Repository) Replace(id int64, user domain.User) error {
-	_, err := repo.db.Exec("update users set name = $1, email = $2, password = $3 WHERE id = $4", user.Name, user.Email, user.Password, id)
+	_, err := repo.db.Exec("update users set name = $1, email = $2, password = $3 WHERE id = $4",
+		user.Name, user.Email, user.Password, id)
 	return err
 }
 

@@ -33,9 +33,10 @@ func main() {
 	hasher := hash.NewSHA1Hasher("RqijtrEJTQ0wtqTEsGNHrownSaltIGj")
 
 	userRepo := psql.NewRepository(db)
-	userService := service.NewService(userRepo, hasher, []byte("Secret here"))
-	handler := rest.NewHandler(userService)
-	handler.InitRouter()
+	authRepo := psql.NewAuthRepository(db)
+	userService := service.NewService(userRepo)
+	authService := service.NewAuthService(authRepo, hasher, []byte("Secret here"))
+	handler := rest.NewHandler(authService, userService)
 	if err := http.ListenAndServe(":8080", handler.InitRouter()); err != nil {
 		log.Fatal("Failed to run server", err.Error())
 	}

@@ -19,23 +19,30 @@ const (
 	ctxUserId CtxValue = iota
 )
 
-type UserService interface {
-	GetAll() ([]domain.User, error)
-	GetById(id int64) (domain.User, error)
+type AuthService interface {
 	SignUp(user domain.UserInput) error
 	SignIn(signInInput domain.SignInInput) (string, error)
 	ParseToken(ctx context.Context, token string) (int64, error)
+}
+
+type UserService interface {
+	GetAll() ([]domain.User, error)
+	GetById(id int64) (domain.User, error)
 	Replace(id int64, user domain.User) error
 	Update(id int64, userInp domain.UserInput) error
 	Delete(id int64) error
 }
 
 type Handler struct {
-	service UserService
+	authService AuthService
+	userService UserService
 }
 
-func NewHandler(service UserService) *Handler {
-	return &Handler{service: service}
+func NewHandler(authService AuthService, userService UserService) *Handler {
+	return &Handler{
+		authService: authService,
+		userService: userService,
+	}
 }
 
 func (h *Handler) InitRouter() *mux.Router {
@@ -66,7 +73,7 @@ func (h *Handler) initUserRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.service.GetAll()
+	users, err := h.userService.GetAll()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to get users: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -87,7 +94,7 @@ func (h *Handler) getUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetById(id)
+	user, err := h.userService.GetById(id)
 	if err != nil {
 		http.Error(w, "failed to find user", http.StatusInternalServerError)
 		return
@@ -120,7 +127,7 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.service.SignUp(user); err != nil {
+	if err = h.authService.SignUp(user); err != nil {
 		http.Error(w, fmt.Sprintf("failed to create user: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -146,7 +153,7 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.service.SignIn(signInInput)
+	token, err := h.authService.SignIn(signInInput)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -187,7 +194,7 @@ func (h *Handler) replaceUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Replace(id, user); err != nil {
+	if err := h.userService.Replace(id, user); err != nil {
 		http.Error(w, fmt.Sprintf("failed to update user: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -212,7 +219,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Update(id, userInp); err != nil {
+	if err := h.userService.Update(id, userInp); err != nil {
 		http.Error(w, fmt.Sprintf("failed to update user: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -225,7 +232,7 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Delete(id); err != nil {
+	if err := h.userService.Delete(id); err != nil {
 		http.Error(w, "failed to delete user", http.StatusInternalServerError)
 		return
 	}
@@ -241,7 +248,7 @@ func (h *Handler) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userId, err := h.service.ParseToken(r.Context(), token)
+		userId, err := h.authService.ParseToken(r.Context(), token)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

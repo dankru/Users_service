@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  servereqweq:
+  server:
     build:
       context: .
       dockerfile: docker/Dockerfile

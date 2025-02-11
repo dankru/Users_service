@@ -2,13 +2,11 @@ package rest
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/dankru/Commissions_simple/internal/domain"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 func (h *Handler) initUserRoutes(router *mux.Router) {

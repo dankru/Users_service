@@ -17,8 +17,9 @@ const (
 
 type AuthService interface {
 	SignUp(user domain.UserInput) error
-	SignIn(signInInput domain.SignInInput) (string, error)
+	SignIn(signInInput domain.SignInInput) (string, string, error)
 	ParseToken(ctx context.Context, token string) (int64, error)
+	RefreshTokens(refreshToken string) (string, string, error)
 }
 
 type UserService interface {

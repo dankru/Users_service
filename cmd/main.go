@@ -34,9 +34,10 @@ func main() {
 
 	userRepo := psql.NewRepository(db)
 	authRepo := psql.NewAuthRepository(db)
+	tokensRepo := psql.NewTokens(db)
 
 	userService := service.NewService(userRepo)
-	authService := service.NewAuthService(authRepo, hasher, []byte("Secret here"))
+	authService := service.NewAuthService(authRepo, tokensRepo, hasher, []byte("Secret here"))
 
 	handler := rest.NewHandler(authService, userService)
 	if err := http.ListenAndServe(":8080", handler.InitRouter()); err != nil {

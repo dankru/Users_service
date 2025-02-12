@@ -1,43 +1,35 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"github.com/dankru/Commissions_simple/internal/repository/psql"
 	"github.com/dankru/Commissions_simple/internal/server"
 	"github.com/dankru/Commissions_simple/internal/service"
 	"github.com/dankru/Commissions_simple/internal/transport/rest"
+	"github.com/dankru/Commissions_simple/pkg/database/pgsql"
 	hash "github.com/dankru/Commissions_simple/pkg/hasher"
 	_ "github.com/lib/pq"
-	"log"
 	"os"
 	"time"
 )
 
 func main() {
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-
-	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", dbHost, dbPort, dbUser, dbName, dbPassword)
-	fmt.Println("Connecting to DB with DSN:", dsn)
-
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		log.Fatal("DB init failure: ", err.Error())
+	conn := pgsql.Connection{
+		DB_HOST:     os.Getenv("DB_HOST"),
+		DB_PORT:     os.Getenv("DB_PORT"),
+		DB_USER:     os.Getenv("DB_USER"),
+		DB_PASSWORD: os.Getenv("DB_PASSWORD"),
+		DB_NAME:     os.Getenv("DB_NAME"),
 	}
-	defer db.Close()
+	postgres := pgsql.NewPostgreSQLDB(conn)
 
-	hasher := hash.NewSHA1Hasher("RqijtrEJTQ0wtqTEsGNHrownSaltIGj")
+	hasher := hash.NewSHA1Hasher(os.Getenv("SALT"))
 
-	userRepo := psql.NewRepository(db)
-	authRepo := psql.NewAuthRepository(db)
-	tokensRepo := psql.NewTokens(db)
+	userRepo := psql.NewRepository(postgres.DB)
+	authRepo := psql.NewAuthRepository(postgres.DB)
+	tokensRepo := psql.NewTokens(postgres.DB)
 
 	userService := service.NewService(userRepo)
-	authService := service.NewAuthService(authRepo, tokensRepo, hasher, []byte("Secret here"))
+	authService := service.NewAuthService(authRepo, tokensRepo, hasher, []byte(os.Getenv("HMAC_SECRET")))
 
 	handler := rest.NewHandler(authService, userService)
 

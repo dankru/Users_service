@@ -46,6 +46,7 @@ func NewHandler(authService AuthService, userService UserService) *Handler {
 
 func (h *Handler) InitRouter() *mux.Router {
 	r := mux.NewRouter()
+	r.Use(loggingMiddleware)
 	h.initAuthRoutes(r)
 	h.initUserRoutes(r)
 	return r

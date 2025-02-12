@@ -16,6 +16,7 @@ func NewServer(addr string, writeTimeout, readTimeout, idleTimeout time.Duration
 			Addr:         addr,
 			WriteTimeout: writeTimeout,
 			IdleTimeout:  idleTimeout,
+			ReadTimeout:  readTimeout,
 			Handler:      handler,
 		},
 	}

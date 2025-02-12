@@ -48,7 +48,6 @@ func (s *AuthService) SignUp(input domain.UserInput) error {
 		Email:    *input.Email,
 		Password: password,
 	}
-	fmt.Println("inside sign up")
 	err = s.repository.CreateUser(user)
 	return err
 }

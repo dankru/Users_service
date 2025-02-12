@@ -21,6 +21,7 @@ func main() {
 		DB_NAME:     os.Getenv("DB_NAME"),
 	}
 	postgres := pgsql.NewPostgreSQLDB(conn)
+	defer postgres.Close()
 
 	hasher := hash.NewSHA1Hasher(os.Getenv("SALT"))
 
@@ -36,4 +37,5 @@ func main() {
 	srv := server.NewServer("0.0.0.0:8080", time.Second*15, time.Second*15, time.Second*60, handler.InitRouter())
 
 	srv.Run()
+
 }

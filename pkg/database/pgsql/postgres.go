@@ -26,5 +26,17 @@ func NewPostgreSQLDB(conn Connection) *PostgresqlDB {
 	if err != nil {
 		log.Fatal("DB init failure: ", err.Error())
 	}
+
+	if err := db.Ping(); err != nil {
+		db.Close()
+		log.Fatal(err.Error())
+	}
+
 	return &PostgresqlDB{DB: db}
+}
+
+func (postgres *PostgresqlDB) Close() {
+	if err := postgres.DB.Close(); err != nil {
+		log.Println("error closing db: ", err.Error())
+	}
 }

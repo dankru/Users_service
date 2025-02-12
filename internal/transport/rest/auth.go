@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/dankru/Commissions_simple/internal/domain"
 	"github.com/gorilla/mux"
-	"io"
 	"net/http"
 	"strings"
 )
@@ -23,17 +22,8 @@ func (h *Handler) initAuthRoutes(router *mux.Router) {
 
 func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 
-	reqBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-
 	var user domain.UserInput
-	if err = json.Unmarshal(reqBytes, &user); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
+	user, err := decodeJsonBody[domain.UserInput](r)
 
 	if err = user.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -49,14 +39,10 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
-	reqBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-
 	var signInInput domain.SignInInput
-	if err = json.Unmarshal(reqBytes, &signInInput); err != nil {
+
+	signInInput, err := decodeJsonBody[domain.SignInInput](r)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

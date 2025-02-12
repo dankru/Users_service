@@ -2,9 +2,11 @@ package rest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/dankru/Commissions_simple/internal/domain"
 	"github.com/gorilla/mux"
+	"io"
 	"net/http"
 	"strconv"
 )
@@ -61,4 +63,18 @@ func getIdFromRequest(r *http.Request) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func decodeJsonBody[T domain.Input](r *http.Request) (T, error) {
+	var dst T
+
+	reqBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return dst, err
+	}
+
+	if err = json.Unmarshal(reqBytes, &dst); err != nil {
+		return dst, err
+	}
+	return dst, nil
 }

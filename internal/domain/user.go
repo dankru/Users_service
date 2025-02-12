@@ -22,6 +22,10 @@ type User struct {
 	RegisteredAt time.Time
 }
 
+type Input interface {
+	UserInput | SignInInput
+}
+
 type UserInput struct {
 	Name     *string `json:"name" validate:"required,gte=2"`
 	Email    *string `json:"email" validate:"required,email"`
@@ -37,6 +41,6 @@ func (i UserInput) Validate() error {
 	return validate.Struct(i)
 }
 
-func (i *SignInInput) Validate() error {
+func (i SignInInput) Validate() error {
 	return validate.Struct(i)
 }

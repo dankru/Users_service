@@ -1,4 +1,4 @@
-package psql
+package pg_repo
 
 import (
 	"database/sql"

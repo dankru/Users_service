@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/dankru/Commissions_simple/internal/grpc"
 	"github.com/dankru/Commissions_simple/internal/repository/pg_repo"
 	"github.com/dankru/Commissions_simple/internal/server"
 	"github.com/dankru/Commissions_simple/internal/service"
@@ -13,6 +14,8 @@ import (
 )
 
 func main() {
+	grpc.ParseToken()
+
 	conn := pg_db.Connection{
 		DB_HOST:     os.Getenv("DB_HOST"),
 		DB_PORT:     os.Getenv("DB_PORT"),
@@ -20,6 +23,7 @@ func main() {
 		DB_NAME:     os.Getenv("DB_NAME"),
 		DB_PASSWORD: os.Getenv("DB_PASSWORD"),
 	}
+
 	postgres := pg_db.NewPostgreSQLDB(conn)
 	defer postgres.Close()
 

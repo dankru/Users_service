@@ -16,7 +16,7 @@ services:
     depends_on:
       - db
     volumes:
-      - /home/q/projects/Practice/Commissions_simple_v1:/app
+      - /home/q/projects/Practice/Commissions_simple/Commissions_simple_v1:/app
 
   db:
     image: postgres:15

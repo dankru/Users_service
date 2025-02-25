@@ -14,8 +14,6 @@ import (
 )
 
 func main() {
-	grpc.ParseToken()
-
 	conn := pg_db.Connection{
 		DB_HOST:     os.Getenv("DB_HOST"),
 		DB_PORT:     os.Getenv("DB_PORT"),
@@ -33,8 +31,10 @@ func main() {
 	authRepo := pg_repo.NewAuthRepository(postgres.DB)
 	tokensRepo := pg_repo.NewTokens(postgres.DB)
 
+	grpcClient := grpc.NewGrpcClient()
+
 	userService := service.NewService(userRepo)
-	authService := service.NewAuthService(authRepo, tokensRepo, hasher, []byte(os.Getenv("HMAC_SECRET")))
+	authService := service.NewAuthService(authRepo, tokensRepo, hasher, grpcClient, []byte(os.Getenv("HMAC_SECRET")))
 
 	handler := rest.NewHandler(authService, userService)
 

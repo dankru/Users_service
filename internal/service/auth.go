@@ -22,18 +22,24 @@ type SessionsRepository interface {
 	Get(token string) (domain.RefreshSession, error)
 }
 
+type GrpcClient interface {
+	ParseToken() (string, error)
+}
+
 type AuthService struct {
 	repository         AuthRepository
 	sessionsRepository SessionsRepository
 	hasher             PasswordHasher
+	grpcClient         GrpcClient
 	hmacSecret         []byte
 }
 
-func NewAuthService(repository AuthRepository, sessionsRepository SessionsRepository, hasher PasswordHasher, hmacSecret []byte) *AuthService {
+func NewAuthService(repository AuthRepository, sessionsRepository SessionsRepository, hasher PasswordHasher, grpcClient GrpcClient, hmacSecret []byte) *AuthService {
 	return &AuthService{
 		repository:         repository,
 		sessionsRepository: sessionsRepository,
 		hasher:             hasher,
+		grpcClient:         grpcClient,
 		hmacSecret:         hmacSecret,
 	}
 }
@@ -97,37 +103,16 @@ func (s *AuthService) generateToken(userId int64) (string, string, error) {
 }
 
 func (s *AuthService) ParseToken(ctx context.Context, token string) (int64, error) {
-	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		return s.hmacSecret, nil
-	})
-
+	id, err := s.grpcClient.ParseToken()
+	if err != nil {
+		return 0, fmt.Errorf(err.Error())
+	}
+	intID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 
-	if !t.Valid {
-		return 0, errors.New("invalid token")
-	}
-
-	claims, ok := t.Claims.(jwt.MapClaims)
-	if !ok {
-		return 0, errors.New("invalid claims")
-	}
-
-	subject, ok := claims["sub"].(string)
-	if !ok {
-		return 0, errors.New("Invalid subject")
-	}
-
-	id, err := strconv.Atoi(subject)
-	if err != nil {
-		return 0, errors.New("invalid subject")
-	}
-
-	return int64(id), nil
+	return intID, nil
 }
 
 func (s *AuthService) RefreshTokens(refreshToken string) (string, string, error) {

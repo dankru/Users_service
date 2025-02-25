@@ -8,10 +8,17 @@ import (
 	"log"
 )
 
-func ParseToken() {
+type GrpcClient struct {
+}
+
+func NewGrpcClient() *GrpcClient {
+	return &GrpcClient{}
+}
+
+func (g *GrpcClient) ParseToken() (string, error) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	conn, err := grpc.NewClient(":9000", opts...)
+	conn, err := grpc.NewClient("172.17.0.1:9000", opts...)
 	if err != nil {
 		log.Fatalf("Не удалось установить соединение: %s", err.Error())
 	}
@@ -19,11 +26,11 @@ func ParseToken() {
 
 	c := authpb.NewTokenServiceClient(conn)
 
-	message := authpb.TokenRequest{Token: "test message"}
+	message := authpb.TokenRequest{Token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA1NjA1NjUsImlhdCI6MTc0MDUwNjU2NSwic3ViIjoiMyJ9.UfIFAfgFVxYc0qlnjpmvvmi7Zztpob5XnSj9_q2hL5A"}
 	response, err := c.ParseToken(context.Background(), &message)
 	if err != nil {
-		log.Fatalf("Не удалось отправить сообщение")
+		log.Fatalf("Не удалось отправить сообщение: %s", err.Error())
 	}
 
-	log.Printf(response.Id)
+	return response.Id, err
 }

@@ -3,7 +3,7 @@ module github.com/dankru/Commissions_simple
 go 1.23.4
 
 require (
-	github.com/dankru/proto-definitions v0.1.0
+	github.com/dankru/proto-definitions v0.1.1-0.20250226165221-f4c480dca07e
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.1

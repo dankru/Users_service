@@ -15,7 +15,7 @@ func NewGrpcClient() *GrpcClient {
 	return &GrpcClient{}
 }
 
-func (g *GrpcClient) ParseToken() (string, error) {
+func (g *GrpcClient) ParseToken() (int64, error) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	conn, err := grpc.NewClient("172.17.0.1:9000", opts...)
@@ -26,7 +26,8 @@ func (g *GrpcClient) ParseToken() (string, error) {
 
 	c := authpb.NewTokenServiceClient(conn)
 
-	message := authpb.TokenRequest{Token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA1NjA1NjUsImlhdCI6MTc0MDUwNjU2NSwic3ViIjoiMyJ9.UfIFAfgFVxYc0qlnjpmvvmi7Zztpob5XnSj9_q2hL5A"}
+	message := authpb.TokenRequest{Token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA2NDM5NDgsImlhdCI6MTc0MDU4OTk0OCwic3ViIjoiMyJ9.nbiNOZiBAKds-Ta1JNN19iyiRm7wIILFNgAAal9qXJ8"}
+
 	response, err := c.ParseToken(context.Background(), &message)
 	if err != nil {
 		log.Fatalf("Не удалось отправить сообщение: %s", err.Error())

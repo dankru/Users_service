@@ -23,7 +23,7 @@ type SessionsRepository interface {
 }
 
 type GrpcClient interface {
-	ParseToken() (string, error)
+	ParseToken() (int64, error)
 }
 
 type AuthService struct {
@@ -107,12 +107,8 @@ func (s *AuthService) ParseToken(ctx context.Context, token string) (int64, erro
 	if err != nil {
 		return 0, fmt.Errorf(err.Error())
 	}
-	intID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		return 0, err
-	}
 
-	return intID, nil
+	return id, nil
 }
 
 func (s *AuthService) RefreshTokens(refreshToken string) (string, string, error) {

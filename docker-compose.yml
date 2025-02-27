@@ -18,6 +18,21 @@ services:
     volumes:
       - /home/q/projects/Practice/Commissions_simple/Commissions_simple_v1:/app
 
+  auth:
+    image: docker.io/descroi/commissions_simple:latest  # Образ с docker hub
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=123
+      - DB_NAME=postgres
+    depends_on:
+      - db
+    volumes:
+      - /home/q/projects/Practice/Commissions_simple/Auth_service:/auth # Монтируем локальные файлы
+
   db:
     image: postgres:15
     container_name: postgres

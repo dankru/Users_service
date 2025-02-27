@@ -21,7 +21,7 @@ func NewGrpcClient() *GrpcClient {
 func (g *GrpcClient) ParseToken(ctx context.Context, token string) (int64, error) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	conn, err := grpc.NewClient("172.17.0.1:9000", opts...)
+	conn, err := grpc.NewClient("auth:8081", opts...)
 	if err != nil {
 		log.Fatalf("Не удалось установить соединение: %s", err.Error())
 	}

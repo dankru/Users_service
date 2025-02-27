@@ -23,7 +23,7 @@ type SessionsRepository interface {
 }
 
 type GrpcClient interface {
-	ParseToken() (int64, error)
+	ParseToken(context.Context, string) (int64, error)
 }
 
 type AuthService struct {
@@ -103,7 +103,7 @@ func (s *AuthService) generateToken(userId int64) (string, string, error) {
 }
 
 func (s *AuthService) ParseToken(ctx context.Context, token string) (int64, error) {
-	id, err := s.grpcClient.ParseToken()
+	id, err := s.grpcClient.ParseToken(ctx, token)
 	if err != nil {
 		return 0, fmt.Errorf(err.Error())
 	}

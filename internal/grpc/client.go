@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	authpb "github.com/dankru/proto-definitions/pkg/auth"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,7 +22,7 @@ func NewGrpcClient() *GrpcClient {
 func (g *GrpcClient) ParseToken(ctx context.Context, token string) (int64, error) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	conn, err := grpc.NewClient("auth:8081", opts...)
+	conn, err := grpc.NewClient(viper.GetString("authServer.host")+viper.GetString("authServer.port"), opts...)
 	if err != nil {
 		log.Fatalf("Не удалось установить соединение: %s", err.Error())
 	}
@@ -38,7 +39,6 @@ func (g *GrpcClient) ParseToken(ctx context.Context, token string) (int64, error
 			// Если ошибка аутентификации (например, токен истек)
 			return 0, fmt.Errorf("Token is expired")
 		}
-		// Для других ошибок просто передаем их
 		return 0, fmt.Errorf("Ошибка при обработке токена: %v", err)
 		// Для других ошибок просто передаем их
 	}

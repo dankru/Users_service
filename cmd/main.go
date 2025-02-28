@@ -9,11 +9,16 @@ import (
 	"github.com/dankru/Commissions_simple/pkg/database/pg_db"
 	hash "github.com/dankru/Commissions_simple/pkg/hasher"
 	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
+	"log"
 	"os"
-	"time"
 )
 
 func main() {
+	if err := initConfig(); err != nil {
+		log.Fatalf("error initializing configs: %s", err.Error())
+	}
+
 	conn := pg_db.Connection{
 		DB_HOST:     os.Getenv("DB_HOST"),
 		DB_PORT:     os.Getenv("DB_PORT"),
@@ -37,9 +42,17 @@ func main() {
 	authService := service.NewAuthService(authRepo, tokensRepo, hasher, grpcClient, []byte(os.Getenv("HMAC_SECRET")))
 
 	handler := rest.NewHandler(authService, userService)
-
-	srv := server.NewServer("0.0.0.0:8080", time.Second*15, time.Second*15, time.Second*60, handler.InitRouter())
+	srv := server.NewServer(viper.GetString("server.port"),
+		viper.GetDuration("server.writeTimeout"),
+		viper.GetDuration("server.readTimeout"),
+		viper.GetDuration("server.idleTimeout"),
+		handler.InitRouter())
 
 	srv.Run()
+}
 
+func initConfig() error {
+	viper.AddConfigPath("../configs")
+	viper.SetConfigName("config")
+	return viper.ReadInConfig()
 }

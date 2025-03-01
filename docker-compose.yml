@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+
+  gateway:
+    image: docker.io/descroi/gateway:latest  # Образ с docker hub
+    network_mode: "host"
+    ports:
+      - "3000:3000"
+    volumes:
+      - /home/q/projects/Practice/Commissions_simple/Api_gateway:/gateway
+
   server:
     build:
       context: .
@@ -32,7 +41,6 @@ services:
       - db
     volumes:
       - /home/q/projects/Practice/Commissions_simple/Auth_service:/auth # Монтируем локальные файлы
-
   db:
     image: postgres:15
     container_name: postgres

@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dankru/Commissions_simple/internal/domain"
-	"github.com/golang-jwt/jwt"
 	"math/rand"
-	"strconv"
 	"time"
 )
 
@@ -23,7 +21,8 @@ type SessionsRepository interface {
 }
 
 type GrpcClient interface {
-	ParseToken(context.Context, string) (int64, error)
+	ParseToken(ctx context.Context, token string) (int64, error)
+	GenerateToken(ctx context.Context, userId int64) (string, string, error)
 }
 
 type AuthService struct {
@@ -45,6 +44,7 @@ func NewAuthService(repository AuthRepository, sessionsRepository SessionsReposi
 }
 
 func (s *AuthService) SignUp(input domain.UserInput) error {
+
 	password, err := s.hasher.Hash(*input.Password)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (s *AuthService) SignUp(input domain.UserInput) error {
 	return err
 }
 
-func (s *AuthService) SignIn(signInInput domain.SignInInput) (string, string, error) {
+func (s *AuthService) SignIn(ctx context.Context, signInInput domain.SignInInput) (string, string, error) {
 	password, err := s.hasher.Hash(signInInput.Password)
 	if err != nil {
 		return "", "", err
@@ -71,32 +71,13 @@ func (s *AuthService) SignIn(signInInput domain.SignInInput) (string, string, er
 		return "", "", err
 	}
 
-	return s.generateToken(user.ID)
+	return s.GenerateToken(ctx, user.ID)
 }
 
-func (s *AuthService) generateToken(userId int64) (string, string, error) {
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Subject:   strconv.Itoa(int(userId)),
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: time.Now().Add(time.Hour * 15).Unix(),
-	})
-
-	accessToken, err := t.SignedString(s.hmacSecret)
+func (s *AuthService) GenerateToken(ctx context.Context, userId int64) (string, string, error) {
+	accessToken, refreshToken, err := s.grpcClient.GenerateToken(ctx, userId)
 	if err != nil {
-		return "", "", err
-	}
-
-	refreshToken, err := newRefreshToken()
-	if err != nil {
-		return "", "", err
-	}
-
-	if err := s.sessionsRepository.Create(domain.RefreshSession{
-		UserID:    userId,
-		Token:     refreshToken,
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
-	}); err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf(err.Error())
 	}
 
 	return accessToken, refreshToken, nil
@@ -111,7 +92,7 @@ func (s *AuthService) ParseToken(ctx context.Context, token string) (int64, erro
 	return id, nil
 }
 
-func (s *AuthService) RefreshTokens(refreshToken string) (string, string, error) {
+func (s *AuthService) RefreshTokens(ctx context.Context, refreshToken string) (string, string, error) {
 	session, err := s.sessionsRepository.Get(refreshToken)
 	if err != nil {
 		return "", "", err
@@ -121,7 +102,7 @@ func (s *AuthService) RefreshTokens(refreshToken string) (string, string, error)
 		return "", "", errors.New("refresh token has expired")
 	}
 
-	return s.generateToken(session.UserID)
+	return s.GenerateToken(ctx, session.UserID)
 }
 
 func newRefreshToken() (string, error) {

@@ -50,7 +50,7 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.authService.SignIn(signInInput)
+	accessToken, refreshToken, err := h.authService.SignIn(r.Context(), signInInput)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -80,7 +80,7 @@ func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.authService.RefreshTokens(cookie.Value)
+	accessToken, refreshToken, err := h.authService.RefreshTokens(r.Context(), cookie.Value)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

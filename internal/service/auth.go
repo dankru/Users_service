@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dankru/Commissions_simple/internal/domain"
-	"math/rand"
-	"time"
 )
 
 type AuthRepository interface {
@@ -23,6 +21,7 @@ type SessionsRepository interface {
 type GrpcClient interface {
 	ParseToken(ctx context.Context, token string) (int64, error)
 	GenerateToken(ctx context.Context, userId int64) (string, string, error)
+	RefreshToken(ctx context.Context, token string) (string, string, error)
 }
 
 type AuthService struct {
@@ -93,27 +92,10 @@ func (s *AuthService) ParseToken(ctx context.Context, token string) (int64, erro
 }
 
 func (s *AuthService) RefreshTokens(ctx context.Context, refreshToken string) (string, string, error) {
-	session, err := s.sessionsRepository.Get(refreshToken)
+	accessToken, refreshToken, err := s.grpcClient.RefreshToken(ctx, refreshToken)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf(err.Error())
 	}
 
-	if session.ExpiresAt.Unix() < time.Now().Unix() {
-		return "", "", errors.New("refresh token has expired")
-	}
-
-	return s.GenerateToken(ctx, session.UserID)
-}
-
-func newRefreshToken() (string, error) {
-	b := make([]byte, 32)
-
-	s := rand.NewSource(time.Now().Unix())
-	r := rand.New(s)
-
-	if _, err := r.Read(b); err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%x", b), nil
+	return accessToken, refreshToken, err
 }

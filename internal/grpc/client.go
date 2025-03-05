@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	authpb "github.com/dankru/proto-definitions/pkg/auth"
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -13,26 +12,32 @@ import (
 )
 
 type GrpcClient struct {
+	conn         *grpc.ClientConn
+	tokenService authpb.TokenServiceClient
 }
 
-func NewGrpcClient() *GrpcClient {
-	return &GrpcClient{}
+func NewGrpcClient(addr string) *GrpcClient {
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+
+	conn, err := grpc.NewClient(addr, opts...)
+	if err != nil {
+		log.Println("Не удалось установить соединение: %s", err.Error())
+	}
+
+	return &GrpcClient{
+		tokenService: authpb.NewTokenServiceClient(conn),
+		conn:         conn,
+	}
+}
+
+func (g *GrpcClient) Close() error {
+	return g.conn.Close()
 }
 
 func (g *GrpcClient) ParseToken(ctx context.Context, token string) (int64, error) {
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-
-	conn, err := grpc.NewClient(viper.GetString("authServer.host")+viper.GetString("authServer.port"), opts...)
-	if err != nil {
-		log.Fatalf("Не удалось установить соединение: %s", err.Error())
-	}
-	defer conn.Close()
-
-	c := authpb.NewTokenServiceClient(conn)
-
 	message := authpb.TokenRequest{Token: token}
 
-	response, err := c.ParseToken(context.Background(), &message)
+	response, err := g.tokenService.ParseToken(context.Background(), &message)
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.Unauthenticated {
@@ -46,19 +51,9 @@ func (g *GrpcClient) ParseToken(ctx context.Context, token string) (int64, error
 }
 
 func (g *GrpcClient) GenerateToken(ctx context.Context, userId int64) (string, string, error) {
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-
-	conn, err := grpc.NewClient(viper.GetString("authServer.host")+viper.GetString("authServer.port"), opts...)
-	if err != nil {
-		log.Fatalf("Не удалось установить соединение: %s", err.Error())
-	}
-	defer conn.Close()
-
-	c := authpb.NewTokenServiceClient(conn)
-
 	message := authpb.UserData{Id: userId}
 
-	response, err := c.GenerateToken(context.Background(), &message)
+	response, err := g.tokenService.GenerateToken(context.Background(), &message)
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.Unauthenticated {
@@ -72,23 +67,12 @@ func (g *GrpcClient) GenerateToken(ctx context.Context, userId int64) (string, s
 }
 
 func (g *GrpcClient) RefreshToken(ctx context.Context, token string) (string, string, error) {
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-
-	conn, err := grpc.NewClient(viper.GetString("authServer.host")+viper.GetString("authServer.port"), opts...)
-	if err != nil {
-		log.Fatalf("Не удалось установить соединение: %s", err.Error())
-	}
-	defer conn.Close()
-
-	c := authpb.NewTokenServiceClient(conn)
-
 	message := authpb.TokenRequest{Token: token}
 
-	response, err := c.RefreshToken(context.Background(), &message)
+	response, err := g.tokenService.RefreshToken(context.Background(), &message)
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.Unauthenticated {
-			// Если ошибка аутентификации (например, токен истек)
 			return "", "", fmt.Errorf("Token is expired")
 		}
 		return "", "", fmt.Errorf("Ошибка при обработке токена: %v", err)

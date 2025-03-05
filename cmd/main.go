@@ -36,7 +36,7 @@ func main() {
 	authRepo := pg_repo.NewAuthRepository(postgres.DB)
 	tokensRepo := pg_repo.NewTokens(postgres.DB)
 
-	grpcClient := grpc.NewGrpcClient()
+	grpcClient := grpc.NewGrpcClient(viper.GetString("authServer.host") + viper.GetString("authServer.port"))
 
 	userService := service.NewService(userRepo)
 	authService := service.NewAuthService(authRepo, tokensRepo, hasher, grpcClient, []byte(os.Getenv("HMAC_SECRET")))

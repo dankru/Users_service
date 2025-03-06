@@ -9,7 +9,7 @@ type Tokens struct {
 	db *sql.DB
 }
 
-func NewTokens(db *sql.DB) *Tokens {
+func NewTokensRepository(db *sql.DB) *Tokens {
 	return &Tokens{db}
 }
 

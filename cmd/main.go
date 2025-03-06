@@ -34,7 +34,7 @@ func main() {
 
 	userRepo := pg_repo.NewRepository(postgres.DB)
 	authRepo := pg_repo.NewAuthRepository(postgres.DB)
-	tokensRepo := pg_repo.NewTokens(postgres.DB)
+	tokensRepo := pg_repo.NewTokensRepository(postgres.DB)
 
 	grpcClient := grpc.NewGrpcClient(viper.GetString("authServer.host") + viper.GetString("authServer.port"))
 

@@ -29,16 +29,14 @@ type AuthService struct {
 	sessionsRepository SessionsRepository
 	hasher             PasswordHasher
 	grpcClient         GrpcClient
-	hmacSecret         []byte
 }
 
-func NewAuthService(repository AuthRepository, sessionsRepository SessionsRepository, hasher PasswordHasher, grpcClient GrpcClient, hmacSecret []byte) *AuthService {
+func NewAuthService(repository AuthRepository, sessionsRepository SessionsRepository, hasher PasswordHasher, grpcClient GrpcClient) *AuthService {
 	return &AuthService{
 		repository:         repository,
 		sessionsRepository: sessionsRepository,
 		hasher:             hasher,
 		grpcClient:         grpcClient,
-		hmacSecret:         hmacSecret,
 	}
 }
 

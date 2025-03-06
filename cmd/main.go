@@ -39,7 +39,7 @@ func main() {
 	grpcClient := grpc.NewGrpcClient(viper.GetString("authServer.host") + viper.GetString("authServer.port"))
 
 	userService := service.NewService(userRepo)
-	authService := service.NewAuthService(authRepo, tokensRepo, hasher, grpcClient, []byte(os.Getenv("HMAC_SECRET")))
+	authService := service.NewAuthService(authRepo, tokensRepo, hasher, grpcClient)
 
 	handler := rest.NewHandler(authService, userService)
 	srv := server.NewServer(viper.GetString("server.port"),
